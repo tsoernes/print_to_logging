@@ -10,8 +10,6 @@ from operator import attrgetter
 from pathlib import Path
 from typing import List
 
-from ftools.misc import *
-
 if not sys.version_info >= (3, 8):
     # Due to ast.Node.end_lineno
     raise RuntimeError("This script requires Python version 3.8 or higher to run")
