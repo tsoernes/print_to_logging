@@ -20,7 +20,7 @@ To try it out, clone the repo:
 
 Then run the program on the test file:
 
-`python print_to_logging.py -f test.py`
+`python print_to_logging.py -f testfile.py`
 
 
 or on a directory of python files:
