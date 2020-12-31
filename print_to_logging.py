@@ -151,7 +151,8 @@ def modify(
                 if node.names[0].name == 'logging':
                     has_logging_imported = True
                     logging_asname = node.names[0].asname or 'logging'
-        first_import_lineno = min(import_nodes, default=1, key=attrgetter('lineno'))
+        first_import_node = min(import_nodes, default=None, key=attrgetter('lineno'))
+        first_import_lineno = first_import_node.lineno or 0
 
         def get_line(stmt: PrintStatement, level: str) -> str:
             fstring = 'f' if stmt.f_string else ''
@@ -173,7 +174,7 @@ def modify(
                 print_context(lines, stmt.lineix, stmt.end_lineix, line, context_lines)
 
                 inp = None
-                while inp not in ['', 'y', 'n', 'A', 'i', 'w', 'e', 'c', 'e', 'q']:
+                while inp not in ['', 'y', 'n', 'A', 'i', 'w', 'e', 'c', 'x', 'q']:
                     inp = input(
                         Bcolor.OKCYAN + "Accept change? ("
                         f"y = yes ({default_level}) [default], "
