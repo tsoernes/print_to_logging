@@ -5,7 +5,7 @@ The mission is to replace `print` statements with calls to `logging instead`.
 
 `print_to_logging` features:
 - it will ask you to accept or modify any proposed change
-- multiline print statements
+- support for multiline strings and multiline print statements
 - preservation of comments
 - automatic f-string generation
 - preservation of custom print separators
