@@ -3,7 +3,7 @@
 This is an interactive tool for refactoring Python code.
 The mission is to replace `print` statements with calls to `logging instead`.
 
-`print_to_loggin` features:
+`print_to_logging` features:
 - multiline print statements
 - preservation of comments
 - automatic f-string generation
@@ -12,8 +12,11 @@ The mission is to replace `print` statements with calls to `logging instead`.
 - showing a diff for before and after change
 
 To try it out, clone the repo:
+
 `git clone https://github.com/tsoernes/print_to_logging.git & cd print_to_logging`
+
 Then run the program on the test file:
+
 `python print_to_logging.py -f test.py`
 
 
