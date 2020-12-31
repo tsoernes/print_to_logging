@@ -4,6 +4,7 @@ This is an interactive tool for refactoring Python code.
 The mission is to replace `print` statements with calls to `logging instead`.
 
 `print_to_logging` features:
+- it will ask you to accept or modify any proposed change
 - multiline print statements
 - preservation of comments
 - automatic f-string generation
@@ -18,6 +19,11 @@ To try it out, clone the repo:
 Then run the program on the test file:
 
 `python print_to_logging.py -f test.py`
+
+
+or on a directory of python files:
+
+`python print_to_logging.py -d ~/code/my-python-project`
 
 
 See `python print_to_logging.py --help`:
