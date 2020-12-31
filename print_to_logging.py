@@ -197,7 +197,7 @@ def modify(
             if accept_all or inp in ['', 'y', 'A', 'i', 'w', 'e', 'c', 'e']:
                 lines[stmt.lineix] = line
                 edited = True
-                to_del_lineixs.extend(range(stmt.lineix + 1, stmt.end_lineix))
+                to_del_lineixs.extend(range(stmt.lineix + 1, stmt.end_lineix + 1))
                 n_changes += 1
         for index in sorted(to_del_lineixs, reverse=True):
             del lines[index]
