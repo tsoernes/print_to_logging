@@ -1,5 +1,7 @@
 ## print_to_logging
 
+[![asciicast](https://asciinema.org/a/mSw4uEVJrvxoKW6so3b5RPjAj](hhttps://asciinema.org/a/mSw4uEVJrvxoKW6so3b5RPjAj)
+
 This is an interactive tool for refactoring Python code.
 The mission is to replace `print` statements with calls to `logging instead`.
 
