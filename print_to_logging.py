@@ -8,6 +8,7 @@ import tokenize
 from dataclasses import dataclass
 from operator import attrgetter
 from pathlib import Path
+from shutil import get_terminal_size
 from typing import List
 
 if not sys.version_info >= (3, 8):
@@ -36,6 +37,10 @@ levels = {
 }
 
 
+def clear_terminal():
+    print("\n" * get_terminal_size().lines, end='')
+
+
 def confirm_action(desc='Really execute?') -> bool:
     """
     Return True if user confirms with 'Y' input
@@ -54,6 +59,7 @@ class PrintStatement:
     arg_line: str  # The new argument string, i.e. `logging.info(arg_line)`
     f_string: bool  # Whether the arg line should be an f_string
     comment: str  # The comment(s) from the original print statement, joined together
+    source_context: str  # Function or class name in which the print statement occurs
 
 
 def modify(
@@ -61,8 +67,10 @@ def modify(
     paths: List[Path],
     default_level: str = 'info',
     accept_all: bool = False,
-    context_lines: int = 13
-):
+    context_lines: int = 13,
+    comment_sep: str = ' \\ ',
+    **_kwargs,
+) -> None:
     for path in paths:
         fpath = str(path.relative_to(dir_))
         text = path.read_text()
@@ -70,6 +78,13 @@ def modify(
         edited = False  # Is there an accepted edit to write to disk?
 
         tree = ast.parse(text)
+
+        # Make backlinks in order to later determine the context (function or class name)
+        # of the print statement
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                child.parent = node
+
         # Find all the nodes in the AST with a print statement,
         print_nodes = [
             node for node in ast.walk(tree)
@@ -135,10 +150,22 @@ def modify(
                 for i in range(lineix, end_lineix + 1)
                 if i in lineix_to_comment
             ]
-            comment = ' \\ '.join(comments) or None
+            comment = comment_sep.join(comments) or None
+
+            source_context = node
+            while not isinstance(
+                source_context, (ast.AsyncFunctionDef, ast.ClassDef, ast.FunctionDef, ast.Module)
+            ):
+                source_context = source_context.parent
+            if isinstance(source_context, ast.Module):
+                source_context = ''
+            else:
+                source_context = '/' + source_context.name
 
             print_statements.append(
-                PrintStatement(lineix, end_lineix, whitespace, arg_line, has_vars, comment)
+                PrintStatement(
+                    lineix, end_lineix, whitespace, arg_line, has_vars, comment, source_context
+                )
             )
 
         # Find out if logging is already imported, and if so, as what.
@@ -152,12 +179,16 @@ def modify(
                     has_logging_imported = True
                     logging_asname = node.names[0].asname or 'logging'
         first_import_node = min(import_nodes, default=None, key=attrgetter('lineno'))
-        first_import_lineno = first_import_node.lineno or 0
+        first_import_lineno = first_import_node.lineno or 1
 
         def get_line(stmt: PrintStatement, level: str) -> str:
-            fstring = 'f' if stmt.f_string else ''
+            """
+            Construct the full source code line with whitespace,
+            logging statement and optionally a comment
+            """
+            f_string = 'f' if stmt.f_string else ''
             comment = f'  # {stmt.comment}' if stmt.comment else ''
-            return stmt.whitespace + f'{logging_asname}.{level}({fstring}"' \
+            return stmt.whitespace + f'{logging_asname}.{level}({f_string}"' \
                 + stmt.arg_line + '")' + comment
 
         print_statements.sort(key=lambda st: st.lineix)
@@ -169,9 +200,16 @@ def modify(
             line = get_line(stmt, default_level)
 
             if not accept_all:
-                print('\n' * 5)
-                print(Bcolor.HEADER + f"{fpath}:{lineix+1}-{end_lineix+1}", Bcolor.ENDC)
+                clear_terminal()
+                # print("\033[H\033[J")
+
+                print(
+                    Bcolor.HEADER, f"{fpath}{stmt.source_context}:"
+                    f"{stmt.lineix+1}-{stmt.end_lineix+1}", Bcolor.ENDC
+                )
+                print()
                 print_context(lines, stmt.lineix, stmt.end_lineix, line, context_lines)
+                print()
 
                 inp = None
                 while inp not in ['', 'y', 'n', 'A', 'i', 'w', 'e', 'c', 'x', 'q']:
@@ -243,7 +281,10 @@ def get_paths(dir_: Path) -> List[Path]:
 
 
 def cli(args_=None):
-    parser = argparse.ArgumentParser(description='Refactoring tool to replace print with logging')
+    parser = argparse.ArgumentParser(
+        description='Refactoring tool to replace print with logging',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-f', '--file', type=Path)
@@ -256,6 +297,7 @@ def cli(args_=None):
     group.add_argument(
         '-m',
         '--module',
+        type=str,
         help='Find all .py paths in the directory of the module and its subdirectories',
     )
 
@@ -265,19 +307,25 @@ def cli(args_=None):
         default='info',
         dest='default_level',
         choices=list(levels.values()),
-        help="Default logging level (info).",
+        help="Default logging level",
     )
     parser.add_argument(
         '--accept_all',
         default=False,
         action='store_true',
-        help="Auto accept all changes.",
+        help="Auto accept all changes",
     )
     parser.add_argument(
         '--context_lines',
         default=13,
         type=int,
         help="Number of lines before and after change in diff"
+    )
+    parser.add_argument(
+        '--comment_sep',
+        default=' \\ ',
+        type=str,
+        help="Separator to use when joining multiline comments"
     )
 
     args = vars(parser.parse_args(args_))
@@ -300,13 +348,7 @@ def cli(args_=None):
         if not confirm_action('Continue with above paths?'):
             sys.exit(0)
 
-    modify(
-        dir_=dir_,
-        paths=paths,
-        default_level=args['default_level'],
-        accept_all=args['accept_all'],
-        context_lines=args['context_lines']
-    )
+    modify(dir_=dir_, paths=paths, **args)
 
 
 if __name__ == '__main__':
