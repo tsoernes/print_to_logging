@@ -16,7 +16,7 @@ The mission is to replace `print` statements with calls to `logging` instead.
 
 To try it out, clone the repo:
 
-`git clone https://github.com/tsoernes/print_to_logging.git & cd print_to_logging`
+`git clone https://github.com/tsoernes/print_to_logging.git && cd print_to_logging`
 
 Then run the program on the test file:
 

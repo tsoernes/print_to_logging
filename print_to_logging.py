@@ -53,7 +53,7 @@ def confirm_action(desc='Really execute?') -> bool:
 
 @dataclass
 class PrintStatement:
-    lineix: int  # Starting line index of original print statement
+    lineix: int  # Starting line index of original print statement, 0 indexed
     end_lineix: int
     whitespace: str  # The whitespace predecing 'print' in the orginal statement
     arg_line: str  # The new argument string, i.e. `logging.info(arg_line)`
@@ -201,7 +201,6 @@ def modify(
 
             if not accept_all:
                 clear_terminal()
-                # print("\033[H\033[J")
 
                 print(
                     Bcolor.HEADER, f"{fpath}{stmt.source_context}:"
@@ -246,7 +245,7 @@ def modify(
                 print("Added `import logging`. And ", end=' ')
 
             path.write_text('\n'.join(lines))
-            print(f"Wrote {n_changes} to {fpath}")
+            print(f"Wrote {n_changes} changes to {fpath}")
 
 
 def print_context(
