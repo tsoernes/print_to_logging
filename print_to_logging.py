@@ -179,7 +179,7 @@ def modify(
                     has_logging_imported = True
                     logging_asname = node.names[0].asname or 'logging'
         first_import_node = min(import_nodes, default=None, key=attrgetter('lineno'))
-        first_import_lineno = first_import_node.lineno or 1
+        first_import_lineno = first_import_node.lineno if first_import_node else 1
 
         def get_line(stmt: PrintStatement, level: str) -> str:
             """
@@ -231,7 +231,7 @@ def modify(
                     line = get_line(stmt, level)
                 elif inp == 'A':
                     accept_all = True
-            if accept_all or inp in ['', 'y', 'A', 'i', 'w', 'e', 'c', 'e']:
+            if accept_all or inp in ['', 'y', 'A', 'i', 'w', 'e', 'c', 'e', 'x']:
                 lines[stmt.lineix] = line
                 edited = True
                 to_del_lineixs.extend(range(stmt.lineix + 1, stmt.end_lineix + 1))
@@ -313,6 +313,12 @@ def cli(args_=None):
         default=False,
         action='store_true',
         help="Auto accept all changes",
+    )
+    parser.add_argument(
+        '--no_single_var_fstrings',
+        default=False,
+        action='store_true',
+        help="Do not convert \"print(x)\" into \"logging.info(f'{x}')\"",
     )
     parser.add_argument(
         '--context_lines',
